@@ -79,6 +79,11 @@ export class RoomController {
             emojiBtn.onclick = () => this.toggleEmojiPicker();
         }
 
+        const sendBtn = document.getElementById('send-btn');
+        if (sendBtn) {
+            sendBtn.onclick = () => this.sendMessage();
+        }
+
         const text = document.querySelector("#chat_message");
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && text.value.length !== 0) {
@@ -323,6 +328,28 @@ export class RoomController {
         
         const picker = document.getElementById('emoji-picker');
         if (picker) picker.remove();
+    }
+
+    sendMessage() {
+        const text = document.querySelector("#chat_message");
+        if (text.value.length === 0) return;
+        
+        const message = text.value;
+        
+        // Check for kick command: /kick peerId
+        if (this.isHost && message.startsWith('/kick ')) {
+            const peerIdToKick = message.split(' ')[1];
+            if (peerIdToKick) {
+                this.peerService.kickPeer(peerIdToKick);
+                this.createMessage(`Kicked user ${peerIdToKick}`, 'System');
+                text.value = '';
+                return;
+            }
+        }
+
+        this.peerService.broadcastMessage(message, this.myUsername);
+        this.createMessage(message, 'Me');
+        text.value = '';
     }
 
     setMuteButton(isMuted) {
