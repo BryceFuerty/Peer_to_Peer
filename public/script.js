@@ -35,6 +35,11 @@ navigator.mediaDevices.getUserMedia({
     });
   });
 
+  // Handle incoming data connections (Chat & Mesh)
+  peer.on('connection', conn => {
+    setupDataConnection(conn);
+  });
+
   // If we have an ID to connect to, call them
   if (connectToId) {
     // Wait for our ID to be ready
@@ -53,12 +58,12 @@ peer.on('open', id => {
   console.log('My Peer ID is: ' + id);
 });
 
-// Handle incoming data connections (Chat)
-peer.on('connection', conn => {
-  setupDataConnection(conn);
-});
+// Removed global peer.on('connection') to ensure stream is ready
 
 function connectToPeer(peerId, stream) {
+  // Prevent duplicate connections
+  if (dataConnections[peerId]) return;
+
   // 1. Call for Video
   const call = peer.call(peerId, stream);
   const video = document.createElement('video');
@@ -80,7 +85,11 @@ function setupDataConnection(conn) {
   dataConnections[conn.peer] = conn;
 
   conn.on('open', () => {
-    // Connection is ready
+    // Broadcast my known peers to this new connection (Mesh Networking)
+    const knownPeers = Object.keys(dataConnections).filter(id => id !== conn.peer);
+    if (knownPeers.length > 0) {
+      conn.send({ type: 'peer-list', peers: knownPeers });
+    }
   });
 
   conn.on('data', data => {
@@ -88,6 +97,26 @@ function setupDataConnection(conn) {
     if (data.type === 'chat') {
       createMessage(data.message, 'User');
     }
+    if (data.type === 'peer-list') {
+      data.peers.forEach(otherPeerId => {
+        if (otherPeerId !== myPeerId && !dataConnections[otherPeerId]) {
+          connectToPeer(otherPeerId, myVideoStream);
+        }
+      });
+    }
+  });
+
+  conn.on('close', () => {
+    delete dataConnections[conn.peer];
+    // Clean up video if it wasn't already
+    if (peers[conn.peer]) {
+        peers[conn.peer].close();
+        delete peers[conn.peer];
+    }
+  });
+  
+  conn.on('error', () => {
+    delete dataConnections[conn.peer];
   });
 }
 
