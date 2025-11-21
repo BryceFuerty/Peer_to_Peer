@@ -165,15 +165,13 @@ document.addEventListener('keydown', (e) => {
 function createMessage(message, sender) {
   const li = document.createElement('li');
   
-  // Détection des URLs d'images/GIFs
-  const imageRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))/i;
+  const senderElem = document.createElement('b');
+  senderElem.textContent = sender;
   
-  let content = message;
-  if (imageRegex.test(message)) {
-    content = message.replace(imageRegex, '<br><img src="$1" style="max-width: 200px; border-radius: 8px; margin-top: 5px;">');
-  }
+  li.appendChild(senderElem);
+  li.appendChild(document.createElement('br'));
+  li.appendChild(document.createTextNode(message));
   
-  li.innerHTML = `<b>${sender}</b><br/>${content}`;
   messages.append(li);
   scrollToBottom();
 }

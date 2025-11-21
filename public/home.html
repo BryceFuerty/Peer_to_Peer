@@ -115,10 +115,18 @@
       rooms.forEach(room => {
         const div = document.createElement('div');
         div.className = 'room-item';
-        div.innerHTML = `
-          <span>${room.name}</span>
-          <button class="btn-join" onclick="joinRoom('${room.name}')">Join</button>
-        `;
+        
+        const span = document.createElement('span');
+        span.textContent = room.name;
+        
+        const button = document.createElement('button');
+        button.className = 'btn-join';
+        button.textContent = 'Join';
+        button.onclick = () => joinRoom(room.name);
+        
+        div.appendChild(span);
+        div.appendChild(button);
+        
         roomsContainer.appendChild(div);
       });
     });

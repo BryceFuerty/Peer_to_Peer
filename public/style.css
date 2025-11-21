@@ -34,20 +34,20 @@ body {
 .main__videos {
   flex-grow: 1;
   background-color: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   padding: 20px;
+  overflow: hidden; /* Empêche le conteneur de s'agrandir au-delà de l'écran */
+  position: relative;
 }
 
 #video-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 300px);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   grid-auto-rows: 300px;
   gap: 20px;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
+  overflow-y: auto; /* Active le scroll vertical */
+  padding-right: 5px;
 }
 
 video {
