@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>P2P Video Chat - Home</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
   <script src="https://kit.fontawesome.com/c939d0e917.js" crossorigin="anonymous"></script>
   <style>
     body {
@@ -52,6 +53,30 @@
     }
     .btn-join:hover { background-color: #0b7dda; }
     .divider { margin: 20px 0; color: #888; }
+    
+    #room-list {
+      margin-top: 20px;
+      width: 100%;
+      text-align: left;
+    }
+    .room-item {
+      background-color: #333;
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .room-item span {
+      font-weight: bold;
+    }
+    .room-item button {
+      width: auto;
+      margin: 0;
+      padding: 5px 10px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -69,9 +94,41 @@
     <div style="text-align: left; margin-bottom: 5px; font-size: 14px; color: #aaa;">Join a Room:</div>
     <input type="text" id="peerIdInput" placeholder="Enter Room Name / Friend's ID">
     <button class="btn-join" onclick="joinByPeer()">Find & Join Room</button>
+
+    <div id="room-list">
+      <div style="margin-bottom: 10px; color: #aaa; font-size: 14px;">Active Rooms:</div>
+      <div id="rooms-container"></div>
+    </div>
   </div>
 
   <script>
+    const socket = io('/');
+    const roomsContainer = document.getElementById('rooms-container');
+
+    socket.on('update-room-list', (rooms) => {
+      roomsContainer.innerHTML = '';
+      if (rooms.length === 0) {
+        roomsContainer.innerHTML = '<div style="color: #666; font-style: italic;">No active rooms</div>';
+        return;
+      }
+      
+      rooms.forEach(room => {
+        const div = document.createElement('div');
+        div.className = 'room-item';
+        div.innerHTML = `
+          <span>${room.name}</span>
+          <button class="btn-join" onclick="joinRoom('${room.name}')">Join</button>
+        `;
+        roomsContainer.appendChild(div);
+      });
+    });
+
+    function joinRoom(roomName) {
+      const username = document.getElementById('usernameInput').value.trim();
+      if (!username) return alert('Please enter a username first');
+      window.location.href = `/room?connectTo=${roomName}&username=${encodeURIComponent(username)}`;
+    }
+
     function createRoom() {
       const username = document.getElementById('usernameInput').value.trim();
       const roomName = document.getElementById('roomNameInput').value.trim();

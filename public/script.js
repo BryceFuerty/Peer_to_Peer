@@ -2,6 +2,9 @@ const videoGrid = document.getElementById('video-grid');
 const myVideo = document.createElement('video');
 myVideo.muted = true;
 
+// Connect to our signaling server for room listing presence
+const socket = io('/');
+
 // Check if we need to connect to someone
 const urlParams = new URLSearchParams(window.location.search);
 const connectToId = urlParams.get('connectTo');
@@ -62,6 +65,11 @@ navigator.mediaDevices.getUserMedia({
 peer.on('open', id => {
   myPeerId = id;
   console.log('My Peer ID is: ' + id);
+  
+  // If we are hosting a named room, announce it to the server
+  if (customId) {
+    socket.emit('announce-room', customId);
+  }
 });
 
 // Removed global peer.on('connection') to ensure stream is ready
