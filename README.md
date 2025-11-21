@@ -24,6 +24,10 @@ Ce projet permet de créer des salons de discussion vidéo et de rejoindre des s
 - **P2P / WebRTC** : PeerJS
 - **Frontend** : HTML5, CSS3, JavaScript (ES6 Modules)
 
+## WireFrame
+
+![Maquette de l'application](assets/Peer_to_Peer.jpg)
+
 ## Installation et Démarrage
 
 1. **Cloner le dépôt**
