@@ -13,6 +13,7 @@ const dataConnections = {}; // Keep track of chat connections
 // Check if we need to connect to someone
 const urlParams = new URLSearchParams(window.location.search);
 const connectToId = urlParams.get('connectTo');
+const myUsername = urlParams.get('username') || 'Anonymous';
 
 navigator.mediaDevices.getUserMedia({
   video: true,
@@ -95,7 +96,7 @@ function setupDataConnection(conn) {
   conn.on('data', data => {
     // Handle received data
     if (data.type === 'chat') {
-      createMessage(data.message, 'User');
+      createMessage(data.message, data.sender || 'User');
     }
     if (data.type === 'peer-list') {
       data.peers.forEach(otherPeerId => {
@@ -139,7 +140,7 @@ document.addEventListener('keydown', (e) => {
     // Send to all connected peers
     Object.values(dataConnections).forEach(conn => {
       if(conn.open) {
-        conn.send({ type: 'chat', message: message });
+        conn.send({ type: 'chat', message: message, sender: myUsername });
       }
     });
 

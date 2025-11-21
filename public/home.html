@@ -58,6 +58,8 @@
   <div class="container">
     <h1><i class="fas fa-video"></i> P2P Chat</h1>
     
+    <input type="text" id="usernameInput" placeholder="Enter your Username" style="margin-bottom: 20px; border-color: #2196F3;">
+
     <button class="btn-create" onclick="createRoom()">Create New Room</button>
     
     <div class="divider">OR</div>
@@ -68,15 +70,20 @@
 
   <script>
     function createRoom() {
-      window.location.href = '/room';
+      const username = document.getElementById('usernameInput').value.trim();
+      if (!username) return alert('Please enter a username');
+      window.location.href = `/room?username=${encodeURIComponent(username)}`;
     }
 
     function joinByPeer() {
+      const username = document.getElementById('usernameInput').value.trim();
       const peerId = document.getElementById('peerIdInput').value.trim();
+      
+      if (!username) return alert('Please enter a username');
       if (!peerId) return alert('Please enter a Peer ID');
       
       // Pass the peer ID to the room page via query param
-      window.location.href = `/room?connectTo=${peerId}`;
+      window.location.href = `/room?connectTo=${peerId}&username=${encodeURIComponent(username)}`;
     }
   </script>
 </body>
