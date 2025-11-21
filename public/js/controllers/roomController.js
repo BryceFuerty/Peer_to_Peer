@@ -79,13 +79,6 @@ export class RoomController {
             emojiBtn.onclick = () => this.toggleEmojiPicker();
         }
 
-        const fileBtn = document.getElementById('file-btn');
-        const fileInput = document.getElementById('file-input');
-        if (fileBtn && fileInput) {
-            fileBtn.onclick = () => fileInput.click();
-            fileInput.onchange = (e) => this.handleFileSelect(e);
-        }
-
         const text = document.querySelector("#chat_message");
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && text.value.length !== 0) {
@@ -243,6 +236,7 @@ export class RoomController {
         let existingPicker = document.getElementById('reaction-picker');
         if (existingPicker) {
             existingPicker.remove();
+            document.removeEventListener('click', this.closeReactionPickerOnClickOutside);
             return;
         }
 
@@ -259,11 +253,23 @@ export class RoomController {
             btn.onclick = () => {
                 this.broadcastReaction(reactionsDiv.dataset.messageIndex, emoji);
                 picker.remove();
+                document.removeEventListener('click', this.closeReactionPickerOnClickOutside);
             };
             picker.appendChild(btn);
         });
 
         reactionsDiv.appendChild(picker);
+        
+        // Ajouter écouteur pour fermer en cliquant en dehors
+        setTimeout(() => {
+            this.closeReactionPickerOnClickOutside = (e) => {
+                if (!picker.contains(e.target) && !e.target.classList.contains('add-reaction-btn')) {
+                    picker.remove();
+                    document.removeEventListener('click', this.closeReactionPickerOnClickOutside);
+                }
+            };
+            document.addEventListener('click', this.closeReactionPickerOnClickOutside);
+        }, 0);
     }
 
     toggleChat() {
@@ -278,6 +284,7 @@ export class RoomController {
         
         if (picker) {
             picker.remove();
+            document.removeEventListener('click', this.closePickerOnClickOutside);
             return;
         }
 
@@ -285,7 +292,7 @@ export class RoomController {
         picker.id = 'emoji-picker';
         picker.className = 'emoji-picker';
         
-        const emojis = ['😀', '😂', '😍', '🥰', '😘', '😭', '🤔', '😡', '👍', '👎', '🔥', '💯', '✨', '🎉', '🎊', '🚀', '💯', '❤️', '💔', '💕', '💖', '💗', '💘', '🎁', '🎈', '🌟', '⭐', '✨', '🌈', '☀️', '🌙', '⚡'];
+        const emojis = ['😀', '😂', '😍', '🥰', '😘', '😭', '🤔', '😡', '👍', '👎', '🔥', '💯', '✨', '🎉', '🎊', '🚀', '💎', '🎁', '⭐', '🌟', '😱', '🤩', '💪', '🙌', '💝', '💖', '💗', '💘', '💕', '❤️', '🧡', '💛', '💚', '💙'];
         
         emojis.forEach(emoji => {
             const btn = document.createElement('button');
@@ -296,6 +303,17 @@ export class RoomController {
 
         const chatPanel = document.getElementById('chat-panel');
         chatPanel.appendChild(picker);
+        
+        // Ajouter écouteur pour fermer en cliquant en dehors
+        setTimeout(() => {
+            this.closePickerOnClickOutside = (e) => {
+                if (!picker.contains(e.target) && e.target.id !== 'emoji-btn') {
+                    picker.remove();
+                    document.removeEventListener('click', this.closePickerOnClickOutside);
+                }
+            };
+            document.addEventListener('click', this.closePickerOnClickOutside);
+        }, 0);
     }
 
     insertEmoji(emoji) {
@@ -307,21 +325,7 @@ export class RoomController {
         if (picker) picker.remove();
     }
 
-    handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const fileName = file.name;
-            const fileSize = (file.size / 1024).toFixed(2);
-            const message = `📎 ${fileName} (${fileSize}KB)`;
-            
-            this.peerService.broadcastMessage(message, this.myUsername);
-            this.createMessage(message, 'Me');
-            
-            document.getElementById('file-input').value = '';
-        }
-    }
-
-    scrollToBottom() {
+    setMuteButton(isMuted) {
         let d = document.querySelector('.main__chat_window');
         d.scrollTop = d.scrollHeight;
     }
