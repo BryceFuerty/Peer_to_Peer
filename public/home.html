@@ -87,13 +87,13 @@
 
     <div style="text-align: left; margin-bottom: 5px; font-size: 14px; color: #aaa;">Host a Room:</div>
     <input type="text" id="roomNameInput" placeholder="Room Name (Optional, e.g. 'my-meeting')" style="margin-bottom: 10px;">
-    <button class="btn-create" onclick="createRoom()">Create / Host Room</button>
+    <button class="btn-create">Create / Host Room</button>
     
     <div class="divider">OR</div>
     
     <div style="text-align: left; margin-bottom: 5px; font-size: 14px; color: #aaa;">Join a Room:</div>
     <input type="text" id="peerIdInput" placeholder="Enter Room Name / Friend's ID">
-    <button class="btn-join" onclick="joinByPeer()">Find & Join Room</button>
+    <button class="btn-join">Find & Join Room</button>
 
     <div id="room-list">
       <div style="margin-bottom: 10px; color: #aaa; font-size: 14px;">Active Rooms:</div>
@@ -101,66 +101,6 @@
     </div>
   </div>
 
-  <script>
-    const socket = io('/');
-    const roomsContainer = document.getElementById('rooms-container');
-
-    socket.on('update-room-list', (rooms) => {
-      roomsContainer.innerHTML = '';
-      if (rooms.length === 0) {
-        roomsContainer.innerHTML = '<div style="color: #666; font-style: italic;">No active rooms</div>';
-        return;
-      }
-      
-      rooms.forEach(room => {
-        const div = document.createElement('div');
-        div.className = 'room-item';
-        
-        const span = document.createElement('span');
-        span.textContent = room.name;
-        
-        const button = document.createElement('button');
-        button.className = 'btn-join';
-        button.textContent = 'Join';
-        button.onclick = () => joinRoom(room.name);
-        
-        div.appendChild(span);
-        div.appendChild(button);
-        
-        roomsContainer.appendChild(div);
-      });
-    });
-
-    function joinRoom(roomName) {
-      const username = document.getElementById('usernameInput').value.trim();
-      if (!username) return alert('Please enter a username first');
-      window.location.href = `/room?connectTo=${roomName}&username=${encodeURIComponent(username)}`;
-    }
-
-    function createRoom() {
-      const username = document.getElementById('usernameInput').value.trim();
-      const roomName = document.getElementById('roomNameInput').value.trim();
-      
-      if (!username) return alert('Please enter a username');
-      
-      let url = `/room?username=${encodeURIComponent(username)}`;
-      if (roomName) {
-        url += `&customId=${encodeURIComponent(roomName)}`;
-      }
-      
-      window.location.href = url;
-    }
-
-    function joinByPeer() {
-      const username = document.getElementById('usernameInput').value.trim();
-      const peerId = document.getElementById('peerIdInput').value.trim();
-      
-      if (!username) return alert('Please enter a username');
-      if (!peerId) return alert('Please enter a Peer ID');
-      
-      // Pass the peer ID to the room page via query param
-      window.location.href = `/room?connectTo=${peerId}&username=${encodeURIComponent(username)}`;
-    }
-  </script>
+  <script type="module" src="js/homeApp.js"></script>
 </body>
 </html>
