@@ -11,21 +11,42 @@ const peerServer = ExpressPeerServer(server, {
 
 app.use('/peerjs', peerServer);
 
-app.set('view engine', 'ejs'); // We'll use EJS for simple templating to pass room ID, or just static html and JS. 
-// Actually, let's stick to static HTML to keep it simple and use client-side JS to parse URL.
+// Store mapping of PeerID -> RoomID
+const peerToRoom = {};
+
+app.set('view engine', 'ejs'); 
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/home.html');
+});
+
+app.get('/create-room', (req, res) => {
   res.redirect(`/${uuidv4()}`);
 });
 
+app.get('/api/get-room/:peerId', (req, res) => {
+  const peerId = req.params.peerId;
+  const roomId = peerToRoom[peerId];
+  if (roomId) {
+    res.json({ roomId });
+  } else {
+    res.status(404).json({ error: 'User not found' });
+  }
+});
+
 app.get('/:room', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(__dirname + '/public/room.html');
 });
 
 io.on('connection', socket => {
   socket.on('join-room', (roomId, userId) => {
     socket.join(roomId);
+    
+    // Save mapping
+    peerToRoom[userId] = roomId;
+    socket.userId = userId; // Store on socket for disconnect
+
     socket.to(roomId).emit('user-connected', userId);
 
     socket.on('message', (message) => {
@@ -33,6 +54,10 @@ io.on('connection', socket => {
     });
 
     socket.on('disconnect', () => {
+      // Remove mapping
+      if (socket.userId) {
+        delete peerToRoom[socket.userId];
+      }
       socket.to(roomId).emit('user-disconnected', userId);
     });
   });

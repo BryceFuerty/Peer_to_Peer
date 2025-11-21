@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>P2P Video Chat - Home</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://kit.fontawesome.com/c939d0e917.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .container {
+      background-color: #242324;
+      padding: 40px;
+      border-radius: 10px;
+      text-align: center;
+      width: 400px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    h1 { margin-bottom: 30px; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid #3D3D3D;
+      background-color: #1f1f1f;
+      color: white;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 10px;
+      transition: 0.2s;
+    }
+    .btn-create {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .btn-create:hover { background-color: #45a049; }
+    .btn-join {
+      background-color: #2196F3;
+      color: white;
+    }
+    .btn-join:hover { background-color: #0b7dda; }
+    .divider { margin: 20px 0; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><i class="fas fa-video"></i> P2P Chat</h1>
+    
+    <button class="btn-create" onclick="createRoom()">Create New Room</button>
+    
+    <div class="divider">OR</div>
+    
+    <input type="text" id="peerIdInput" placeholder="Enter Friend's Peer ID">
+    <button class="btn-join" onclick="joinByPeer()">Find & Join Room</button>
+  </div>
+
+  <script>
+    function createRoom() {
+      window.location.href = '/create-room';
+    }
+
+    async function joinByPeer() {
+      const peerId = document.getElementById('peerIdInput').value.trim();
+      if (!peerId) return alert('Please enter a Peer ID');
+
+      try {
+        const response = await fetch(`/api/get-room/${peerId}`);
+        const data = await response.json();
+        
+        if (data.roomId) {
+          window.location.href = `/${data.roomId}`;
+        } else {
+          alert('User not found or not in a room.');
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Error searching for room.');
+      }
+    }
+  </script>
+</body>
+</html>

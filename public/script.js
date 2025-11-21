@@ -17,6 +17,7 @@ const peer = new Peer(undefined, {
 
 let myVideoStream;
 const peers = {};
+let myPeerId; // Global variable for the UI
 
 navigator.mediaDevices.getUserMedia({
   video: true,
@@ -46,6 +47,7 @@ socket.on('user-disconnected', userId => {
 });
 
 peer.on('open', id => {
+  myPeerId = id;
   socket.emit('join-room', ROOM_ID, id);
 });
 
