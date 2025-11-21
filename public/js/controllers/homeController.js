@@ -13,11 +13,9 @@ export class HomeController {
         this.socket.on('update-room-list', (rooms) => this.updateRoomList(rooms));
         this.setupEventListeners();
 
-        // Check if user was kicked
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('kicked')) {
             alert('You have been kicked from the room.');
-            // Clean URL
             window.history.replaceState({}, document.title, "/");
         }
     }
