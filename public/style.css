@@ -14,7 +14,21 @@ body {
 
 .main {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 100px);
+}
+
+.app-header {
+  background-color: #1C1E20;
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  text-align: center;
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid #3D3D3D;
+  width: 100%;
 }
 
 .main__left {
@@ -29,6 +43,8 @@ body {
   flex-direction: column;
   background-color: #242324;
   border-left: 1px solid #3D3D3D;
+  min-width: 250px;
+  max-width: 400px;
 }
 
 .main__videos {
@@ -118,6 +134,9 @@ video {
 
 .messages li {
   margin-bottom: 10px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .main__message_container {

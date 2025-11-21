@@ -30,6 +30,7 @@ export class RoomController {
             this.peerService.onOpen((id) => {
                 if (this.customId) {
                     this.socketService.emit('announce-room', this.customId);
+                    this.isHost = true; // Mark as host if created with customId
                 }
                 
                 if (this.connectToId) {
@@ -63,6 +64,18 @@ export class RoomController {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && text.value.length !== 0) {
                 const message = text.value;
+                
+                // Check for kick command: /kick peerId
+                if (this.isHost && message.startsWith('/kick ')) {
+                    const peerIdToKick = message.split(' ')[1];
+                    if (peerIdToKick) {
+                        this.peerService.kickPeer(peerIdToKick);
+                        this.createMessage(`Kicked user ${peerIdToKick}`, 'System');
+                        text.value = '';
+                        return;
+                    }
+                }
+
                 this.peerService.broadcastMessage(message, this.myUsername);
                 this.createMessage(message, 'Me');
                 text.value = '';
@@ -94,11 +107,24 @@ export class RoomController {
             if (btn.querySelector('.fa-info-circle')) {
                 btn.onclick = () => prompt('My Peer ID:', this.peerService.myPeerId);
             }
+            if (btn.querySelector('.fa-user-friends')) {
+                btn.onclick = () => this.showParticipants();
+            }
             // Leave button
             if (btn.querySelector('.leave_meeting') || btn.innerText.includes('Leave Meeting')) {
                 btn.onclick = () => this.leaveMeeting();
             }
         });
+    }
+
+    showParticipants() {
+        const peers = Object.keys(this.peerService.dataConnections);
+        if (peers.length === 0) {
+            this.createMessage("No other participants connected.", "System");
+        } else {
+            const list = peers.join('\n- ');
+            this.createMessage(`Connected Participants (${peers.length}):\n- ${list}`, "System");
+        }
     }
 
     createMessage(message, sender) {

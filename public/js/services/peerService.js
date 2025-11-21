@@ -32,6 +32,10 @@ export class PeerService {
 
     onOpen(callback) {
         this.onOpenCallback = callback;
+        // If peer is already open, trigger callback immediately
+        if (this.myPeerId) {
+            callback(this.myPeerId);
+        }
     }
 
     answerCalls(stream) {
@@ -81,13 +85,14 @@ export class PeerService {
         });
 
         conn.on('data', data => {
+            if (data.type === 'kick') {
+                window.location.href = '/?kicked=true';
+                return;
+            }
+
             if (this.onDataReceived) this.onDataReceived(data);
             
             if (data.type === 'peer-list') {
-                // Handle peer list (Mesh) - this logic might need to be in controller or passed back
-                // For now, let's emit it or handle it if we have the stream. 
-                // Actually, we need the stream to connect to new peers. 
-                // So we might need to pass a callback for "connectToNewPeer"
                 if (this.onPeerListReceived) this.onPeerListReceived(data.peers);
             }
         });
@@ -103,6 +108,18 @@ export class PeerService {
         conn.on('error', () => {
             delete this.dataConnections[conn.peer];
         });
+    }
+
+    kickPeer(peerId) {
+        const conn = this.dataConnections[peerId];
+        if (conn && conn.open) {
+            conn.send({ type: 'kick' });
+            // Close connection locally after sending kick message
+            setTimeout(() => {
+                conn.close();
+                if (this.peers[peerId]) this.peers[peerId].close();
+            }, 500);
+        }
     }
 
     broadcastMessage(message, sender) {
