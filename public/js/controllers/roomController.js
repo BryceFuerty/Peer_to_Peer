@@ -54,13 +54,43 @@ export class RoomController {
 
     handleData(data) {
         if (data.type === 'chat') {
-            this.createMessage(data.message, data.sender || 'User');
+            this.createMessage(data.message, data.sender || 'User', data.messageId);
         } else if (data.type === 'reaction') {
-            this.addReaction(data.messageIndex, data.reaction, false);
+            this.addReaction(data.messageId, data.reaction, false);
         }
     }
 
     setupUI() {
+        // Easter egg - Logo Skoupe
+        const skoupeLogo = document.getElementById('skoupe-logo');
+        let clickCount = 0;
+        if (skoupeLogo) {
+            skoupeLogo.onclick = () => {
+                clickCount++;
+                skoupeLogo.style.transform = `rotate(${clickCount * 360}deg) scale(1.1)`;
+                
+                if (clickCount === 1) {
+                    skoupeLogo.style.filter = 'brightness(1.5) hue-rotate(45deg)';
+                } else if (clickCount === 2) {
+                    skoupeLogo.style.filter = 'brightness(0.8) invert(1)';
+                } else if (clickCount === 3) {
+                    skoupeLogo.style.filter = 'drop-shadow(0 0 10px #4FC3F7)';
+                } else if (clickCount >= 4) {
+                    skoupeLogo.style.filter = 'drop-shadow(0 0 20px #FF1493) brightness(1.2)';
+                }
+                
+                setTimeout(() => {
+                    skoupeLogo.style.transform = 'rotate(0deg) scale(1)';
+                }, 600);
+                
+                if (clickCount >= 5) {
+                    this.createMessage('🎉 Vous avez trouvé l\'Easter egg! 🎉', 'System');
+                    clickCount = 0;
+                    skoupeLogo.style.filter = 'none';
+                }
+            };
+        }
+
         const chatButton = Array.from(document.querySelectorAll('.main__controls__button')).find(btn => 
             btn.querySelector('.fa-comment-alt')
         );
@@ -146,9 +176,15 @@ export class RoomController {
         }
     }
 
-    createMessage(message, sender) {
+    createMessage(message, sender, messageId = null) {
         const messages = document.querySelector(".messages");
         const li = document.createElement('li');
+        
+        // Créer un ID unique pour le message ou utiliser celui fourni
+        if (!messageId) {
+            messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+        li.dataset.messageId = messageId;
         
         const senderDiv = document.createElement('div');
         senderDiv.className = 'message-sender';
@@ -160,7 +196,7 @@ export class RoomController {
         
         const reactionsDiv = document.createElement('div');
         reactionsDiv.className = 'message-reactions';
-        reactionsDiv.dataset.messageIndex = messages.children.length;
+        reactionsDiv.dataset.messageId = messageId;
         
         const reactions = ['👍', '❤️', '😂', '😢', '🎉'];
         reactions.forEach(reaction => {
@@ -168,7 +204,7 @@ export class RoomController {
             btn.className = 'reaction-btn';
             btn.textContent = reaction;
             btn.dataset.count = 0;
-            btn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageIndex, reaction);
+            btn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageId, reaction);
             reactionsDiv.appendChild(btn);
         });
         
@@ -186,15 +222,15 @@ export class RoomController {
         this.scrollToBottom();
     }
 
-    broadcastReaction(messageIndex, reaction) {
-        this.peerService.broadcastReaction(messageIndex, reaction);
-        this.addReaction(messageIndex, reaction, true);
+    broadcastReaction(messageId, reaction) {
+        this.peerService.broadcastReaction(messageId, reaction);
+        this.addReaction(messageId, reaction, true);
     }
 
-    addReaction(messageIndex, reaction, isLocal = true) {
-        const messages = document.querySelectorAll('.messages li');
-        if (messages[messageIndex]) {
-            const reactionsDiv = messages[messageIndex].querySelector('.message-reactions');
+    addReaction(messageId, reaction, isLocal = true) {
+        const messageElement = document.querySelector(`li[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            const reactionsDiv = messageElement.querySelector('.message-reactions');
             let existingBtn = Array.from(reactionsDiv.children).find(btn => 
                 btn.classList.contains('reaction-btn') && btn.textContent.split(' ')[0] === reaction
             );
@@ -220,12 +256,13 @@ export class RoomController {
                         existingBtn.classList.add('active');
                     }
                 }
-            } else if (isLocal) {
+            } else {
+                // Créer un nouveau bouton de réaction
                 const newBtn = document.createElement('button');
-                newBtn.className = 'reaction-btn active';
+                newBtn.className = isLocal ? 'reaction-btn active' : 'reaction-btn';
                 newBtn.textContent = reaction;
                 newBtn.dataset.count = 1;
-                newBtn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageIndex, reaction);
+                newBtn.onclick = () => this.broadcastReaction(messageId, reaction);
                 
                 const addBtn = reactionsDiv.querySelector('.add-reaction-btn');
                 if (addBtn) {
@@ -251,12 +288,14 @@ export class RoomController {
         picker.id = 'reaction-picker';
         picker.className = 'reaction-picker';
         
+        const messageId = reactionsDiv.dataset.messageId;
+        
         allReactions.forEach(emoji => {
             const btn = document.createElement('button');
             btn.className = 'reaction-picker-btn';
             btn.textContent = emoji;
             btn.onclick = () => {
-                this.broadcastReaction(reactionsDiv.dataset.messageIndex, emoji);
+                this.broadcastReaction(messageId, emoji);
                 picker.remove();
                 document.removeEventListener('click', this.closeReactionPickerOnClickOutside);
             };
@@ -347,12 +386,22 @@ export class RoomController {
             }
         }
 
-        this.peerService.broadcastMessage(message, this.myUsername);
-        this.createMessage(message, 'Me');
+        // Générer un messageId unique
+        const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Envoyer aux autres participants avec l'ID
+        this.peerService.broadcastMessage(message, this.myUsername, messageId);
+        // Afficher localement
+        this.createMessage(message, 'Me', messageId);
         text.value = '';
     }
 
     setMuteButton(isMuted) {
+        let d = document.querySelector('.main__chat_window');
+        d.scrollTop = d.scrollHeight;
+    }
+
+    scrollToBottom() {
         let d = document.querySelector('.main__chat_window');
         d.scrollTop = d.scrollHeight;
     }

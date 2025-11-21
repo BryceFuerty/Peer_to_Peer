@@ -116,18 +116,18 @@ export class PeerService {
         }
     }
 
-    broadcastMessage(message, sender) {
+    broadcastMessage(message, sender, messageId) {
         Object.values(this.dataConnections).forEach(conn => {
             if(conn.open) {
-                conn.send({ type: 'chat', message: message, sender: sender });
+                conn.send({ type: 'chat', message: message, sender: sender, messageId: messageId });
             }
         });
     }
 
-    broadcastReaction(messageIndex, reaction) {
+    broadcastReaction(messageId, reaction) {
         Object.values(this.dataConnections).forEach(conn => {
             if(conn.open) {
-                conn.send({ type: 'reaction', messageIndex: messageIndex, reaction: reaction });
+                conn.send({ type: 'reaction', messageId: messageId, reaction: reaction });
             }
         });
     }
