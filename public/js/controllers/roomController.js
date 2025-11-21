@@ -276,7 +276,8 @@ export class RoomController {
             picker.appendChild(btn);
         });
 
-        document.body.appendChild(picker);
+        const chatPanel = document.getElementById('chat-panel');
+        chatPanel.appendChild(picker);
     }
 
     insertEmoji(emoji) {
