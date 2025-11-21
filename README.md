@@ -70,24 +70,25 @@ Ce projet permet de créer des salons de discussion vidéo et de rejoindre des s
 5. **Fonctionnalité**
 
    1-Choix du pseudo
-      En arrivant sur la page, choisir un pseudo dans l'onglet "Enter your username"
+      - En arrivant sur la page, choisir un pseudo dans l'onglet "Enter your username"
 
    2-Création de la room
-      Choisir le nom de la room dans Room Name ou laisser le champs vide. Cliquer sur le bouton
+      - Choisir le nom de la room dans Room Name ou laisser le champs vide. Cliquer sur le bouton
       "Create/Host room"
 
    3-Fonctionnalité dans une room
-      -Video et Audio
-      -Chat partagé en temps réel
-      -Possibilité de mute, masquer la caméra
-      -Possibilité de passer une caméra en mode in-picture
+      - Video et Audio
+      - Chat partagé en temps réel
+      - Possibilité de mute, masquer la caméra
+      - Possibilité de passer une caméra en mode in-picture
       -Pour l'host seulement, possibilité de kick quelqu'un:
          -Cliquer sur le bouton "Participant"
          -Choisir l'user que l'on veut kick
          -taper /kick *peerID"
 
-   4-Rejoindre une room
+   4- Rejoindre une room
+
       Pour toute cette partie nous avons utilisé un serveur Ngrok pour les tests
       voir: https://ngrok.com/
 
-      -Appuyer sur le bouton avec le nom de la room concerné.      
+      - Appuyer sur le bouton avec le nom de la room concerné.      
