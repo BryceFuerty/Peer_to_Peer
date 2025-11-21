@@ -34,10 +34,10 @@ export class VideoService {
         const enabled = this.myVideoStream.getAudioTracks()[0].enabled;
         if (enabled) {
             this.myVideoStream.getAudioTracks()[0].enabled = false;
-            return true; // Muted
+            return true;
         } else {
             this.myVideoStream.getAudioTracks()[0].enabled = true;
-            return false; // Unmuted
+            return false;
         }
     }
 
@@ -46,10 +46,10 @@ export class VideoService {
         const enabled = this.myVideoStream.getVideoTracks()[0].enabled;
         if (enabled) {
             this.myVideoStream.getVideoTracks()[0].enabled = false;
-            return true; // Stopped
+            return true; 
         } else {
             this.myVideoStream.getVideoTracks()[0].enabled = true;
-            return false; // Playing
+            return false;
         }
     }
 }

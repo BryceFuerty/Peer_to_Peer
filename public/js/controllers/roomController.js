@@ -30,7 +30,7 @@ export class RoomController {
             this.peerService.onOpen((id) => {
                 if (this.customId) {
                     this.socketService.emit('announce-room', this.customId);
-                    this.isHost = true; // Mark as host if created with customId
+                    this.isHost = true; 
                 }
                 
                 if (this.connectToId) {
@@ -61,7 +61,6 @@ export class RoomController {
     }
 
     setupUI() {
-        // Chat toggle button
         const chatButton = Array.from(document.querySelectorAll('.main__controls__button')).find(btn => 
             btn.querySelector('.fa-comment-alt')
         );
@@ -70,19 +69,16 @@ export class RoomController {
             chatButton.onclick = () => this.toggleChat();
         }
 
-        // Close chat button
         const closeBtn = document.getElementById('close-chat');
         if (closeBtn) {
             closeBtn.onclick = () => this.toggleChat();
         }
 
-        // Emoji button
         const emojiBtn = document.getElementById('emoji-btn');
         if (emojiBtn) {
             emojiBtn.onclick = () => this.toggleEmojiPicker();
         }
 
-        // File button
         const fileBtn = document.getElementById('file-btn');
         const fileInput = document.getElementById('file-input');
         if (fileBtn && fileInput) {
@@ -90,13 +86,11 @@ export class RoomController {
             fileInput.onchange = (e) => this.handleFileSelect(e);
         }
 
-        // Chat
         const text = document.querySelector("#chat_message");
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && text.value.length !== 0) {
                 const message = text.value;
                 
-                // Check for kick command: /kick peerId
                 if (this.isHost && message.startsWith('/kick ')) {
                     const peerIdToKick = message.split(' ')[1];
                     if (peerIdToKick) {
@@ -113,7 +107,6 @@ export class RoomController {
             }
         });
 
-        // Buttons - Attach listeners programmatically
         const muteBtn = document.querySelector('.main__mute_button');
         if (muteBtn) {
             muteBtn.onclick = (e) => {
@@ -130,9 +123,6 @@ export class RoomController {
             };
         }
         
-        // Info button
-        // We need to find the button that had the prompt onclick
-        // It has class main__controls__button and contains fa-info-circle
         const buttons = document.querySelectorAll('.main__controls__button');
         buttons.forEach(btn => {
             if (btn.querySelector('.fa-info-circle')) {
@@ -174,7 +164,6 @@ export class RoomController {
         reactionsDiv.className = 'message-reactions';
         reactionsDiv.dataset.messageIndex = messages.children.length;
         
-        // Common reactions - Initialize with count = 0
         const reactions = ['👍', '❤️', '😂', '😢', '🎉'];
         reactions.forEach(reaction => {
             const btn = document.createElement('button');
@@ -185,7 +174,6 @@ export class RoomController {
             reactionsDiv.appendChild(btn);
         });
         
-        // Add reaction button
         const addBtn = document.createElement('button');
         addBtn.className = 'add-reaction-btn';
         addBtn.textContent = '+';
@@ -216,7 +204,6 @@ export class RoomController {
             if (existingBtn) {
                 const currentCount = parseInt(existingBtn.dataset.count) || 0;
                 
-                // Si click local, toggle (si actif, retirer ; si inactif, ajouter)
                 if (isLocal && existingBtn.classList.contains('active')) {
                     if (currentCount <= 1) {
                         existingBtn.textContent = reaction;
@@ -228,7 +215,6 @@ export class RoomController {
                         existingBtn.classList.remove('active');
                     }
                 } else {
-                    // Si réception externe ou click sur inactif, ajouter
                     const newCount = currentCount + 1;
                     existingBtn.textContent = newCount === 1 ? reaction : `${reaction} ${newCount}`;
                     existingBtn.dataset.count = newCount;
@@ -236,16 +222,48 @@ export class RoomController {
                         existingBtn.classList.add('active');
                     }
                 }
+            } else if (isLocal) {
+                const newBtn = document.createElement('button');
+                newBtn.className = 'reaction-btn active';
+                newBtn.textContent = reaction;
+                newBtn.dataset.count = 1;
+                newBtn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageIndex, reaction);
+                
+                const addBtn = reactionsDiv.querySelector('.add-reaction-btn');
+                if (addBtn) {
+                    reactionsDiv.insertBefore(newBtn, addBtn);
+                } else {
+                    reactionsDiv.appendChild(newBtn);
+                }
             }
         }
     }
 
     showReactionPicker(reactionsDiv) {
-        const allReactions = ['👍', '❤️', '😂', '😢', '🎉', '😍', '🔥', '💯', '✨', '😎'];
-        const picked = prompt(`Pick a reaction: ${allReactions.join(' ')}`, '👍');
-        if (picked && allReactions.includes(picked)) {
-            this.broadcastReaction(reactionsDiv.dataset.messageIndex, picked);
+        let existingPicker = document.getElementById('reaction-picker');
+        if (existingPicker) {
+            existingPicker.remove();
+            return;
         }
+
+        const allReactions = ['👍', '❤️', '😂', '😢', '🎉', '😍', '🔥', '💯', '✨', '😎', '🚀', '💎', '🎁', '⭐', '🌟', '😡', '😱', '🤔', '😴', '🥳', '🤩', '🤮', '😈', '👿', '💪', '👏', '🙌', '👐', '🤝', '💝', '💖', '💗', '💘', '💞', '💕'];
+        
+        const picker = document.createElement('div');
+        picker.id = 'reaction-picker';
+        picker.className = 'reaction-picker';
+        
+        allReactions.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'reaction-picker-btn';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                this.broadcastReaction(reactionsDiv.dataset.messageIndex, emoji);
+                picker.remove();
+            };
+            picker.appendChild(btn);
+        });
+
+        reactionsDiv.appendChild(picker);
     }
 
     toggleChat() {
@@ -285,7 +303,6 @@ export class RoomController {
         input.value += emoji;
         input.focus();
         
-        // Remove emoji picker after selection
         const picker = document.getElementById('emoji-picker');
         if (picker) picker.remove();
     }
@@ -300,7 +317,6 @@ export class RoomController {
             this.peerService.broadcastMessage(message, this.myUsername);
             this.createMessage(message, 'Me');
             
-            // Reset file input
             document.getElementById('file-input').value = '';
         }
     }

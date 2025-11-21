@@ -1,12 +1,11 @@
 export class PeerService {
     constructor(customId, onCallStream, onDataReceived) {
         this.peer = customId ? new Peer(customId) : new Peer();
-        this.peers = {}; // Keep track of calls
-        this.dataConnections = {}; // Keep track of chat connections
+        this.peers = {}; 
+        this.dataConnections = {}; 
         this.myPeerId = null;
-        this.onCallStream = onCallStream; // Callback when a stream is received
-        this.onDataReceived = onDataReceived; // Callback when data is received
-
+        this.onCallStream = onCallStream; 
+        this.onDataReceived = onDataReceived; 
         this.initialize();
     }
 
@@ -32,7 +31,6 @@ export class PeerService {
 
     onOpen(callback) {
         this.onOpenCallback = callback;
-        // If peer is already open, trigger callback immediately
         if (this.myPeerId) {
             callback(this.myPeerId);
         }
@@ -56,7 +54,6 @@ export class PeerService {
     connectToPeer(peerId, stream, myUsername) {
         if (this.dataConnections[peerId]) return;
 
-        // 1. Call for Video
         const call = this.peer.call(peerId, stream);
         const video = document.createElement('video');
         
@@ -68,7 +65,6 @@ export class PeerService {
         });
         this.peers[peerId] = call;
 
-        // 2. Connect for Chat
         const conn = this.peer.connect(peerId);
         this.setupDataConnection(conn);
     }
@@ -77,7 +73,6 @@ export class PeerService {
         this.dataConnections[conn.peer] = conn;
 
         conn.on('open', () => {
-            // Broadcast my known peers to this new connection (Mesh Networking)
             const knownPeers = Object.keys(this.dataConnections).filter(id => id !== conn.peer);
             if (knownPeers.length > 0) {
                 conn.send({ type: 'peer-list', peers: knownPeers });
@@ -114,7 +109,6 @@ export class PeerService {
         const conn = this.dataConnections[peerId];
         if (conn && conn.open) {
             conn.send({ type: 'kick' });
-            // Close connection locally after sending kick message
             setTimeout(() => {
                 conn.close();
                 if (this.peers[peerId]) this.peers[peerId].close();

@@ -184,6 +184,7 @@ video {
   gap: 5px;
   margin-top: 8px;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .reaction-btn {
@@ -225,6 +226,45 @@ video {
 .add-reaction-btn:hover {
   color: #4FC3F7;
   border-color: #4FC3F7;
+}
+
+.reaction-picker {
+  position: absolute;
+  bottom: auto;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background-color: #2a2a2a;
+  border: 1px solid #3D3D3D;
+  border-radius: 8px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  z-index: 1001;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+  min-width: 240px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.reaction-picker-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.reaction-picker-btn:hover {
+  background-color: #3a3a3a;
 }
 
 .main__message_container {

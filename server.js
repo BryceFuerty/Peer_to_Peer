@@ -8,7 +8,6 @@ app.use(express.static('public'));
 let activeRooms = [];
 
 io.on('connection', (socket) => {
-  // Send current list to new user
   socket.emit('update-room-list', activeRooms);
 
   socket.on('announce-room', (roomName) => {
@@ -20,7 +19,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // If this socket was a host, remove their room
     const wasHost = activeRooms.find(r => r.host === socket.id);
     if (wasHost) {
         activeRooms = activeRooms.filter(r => r.host !== socket.id);
