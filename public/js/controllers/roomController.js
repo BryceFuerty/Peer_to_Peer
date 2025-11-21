@@ -55,10 +55,41 @@ export class RoomController {
     handleData(data) {
         if (data.type === 'chat') {
             this.createMessage(data.message, data.sender || 'User');
+        } else if (data.type === 'reaction') {
+            this.addReaction(data.messageIndex, data.reaction, false);
         }
     }
 
     setupUI() {
+        // Chat toggle button
+        const chatButton = Array.from(document.querySelectorAll('.main__controls__button')).find(btn => 
+            btn.querySelector('.fa-comment-alt')
+        );
+        
+        if (chatButton) {
+            chatButton.onclick = () => this.toggleChat();
+        }
+
+        // Close chat button
+        const closeBtn = document.getElementById('close-chat');
+        if (closeBtn) {
+            closeBtn.onclick = () => this.toggleChat();
+        }
+
+        // Emoji button
+        const emojiBtn = document.getElementById('emoji-btn');
+        if (emojiBtn) {
+            emojiBtn.onclick = () => this.toggleEmojiPicker();
+        }
+
+        // File button
+        const fileBtn = document.getElementById('file-btn');
+        const fileInput = document.getElementById('file-input');
+        if (fileBtn && fileInput) {
+            fileBtn.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => this.handleFileSelect(e);
+        }
+
         // Chat
         const text = document.querySelector("#chat_message");
         document.addEventListener('keydown', (e) => {
@@ -130,15 +161,147 @@ export class RoomController {
     createMessage(message, sender) {
         const messages = document.querySelector(".messages");
         const li = document.createElement('li');
-        const senderElem = document.createElement('b');
-        senderElem.textContent = sender;
         
-        li.appendChild(senderElem);
-        li.appendChild(document.createElement('br'));
-        li.appendChild(document.createTextNode(message));
+        const senderDiv = document.createElement('div');
+        senderDiv.className = 'message-sender';
+        senderDiv.textContent = sender;
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.textContent = message;
+        
+        const reactionsDiv = document.createElement('div');
+        reactionsDiv.className = 'message-reactions';
+        reactionsDiv.dataset.messageIndex = messages.children.length;
+        
+        // Common reactions - Initialize with count = 0
+        const reactions = ['👍', '❤️', '😂', '😢', '🎉'];
+        reactions.forEach(reaction => {
+            const btn = document.createElement('button');
+            btn.className = 'reaction-btn';
+            btn.textContent = reaction;
+            btn.dataset.count = 0;
+            btn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageIndex, reaction);
+            reactionsDiv.appendChild(btn);
+        });
+        
+        // Add reaction button
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-reaction-btn';
+        addBtn.textContent = '+';
+        addBtn.onclick = () => this.showReactionPicker(reactionsDiv);
+        reactionsDiv.appendChild(addBtn);
+        
+        li.appendChild(senderDiv);
+        li.appendChild(textDiv);
+        li.appendChild(reactionsDiv);
         
         messages.append(li);
         this.scrollToBottom();
+    }
+
+    broadcastReaction(messageIndex, reaction) {
+        this.peerService.broadcastReaction(messageIndex, reaction);
+        this.addReaction(messageIndex, reaction, true);
+    }
+
+    addReaction(messageIndex, reaction, isLocal = true) {
+        const messages = document.querySelectorAll('.messages li');
+        if (messages[messageIndex]) {
+            const reactionsDiv = messages[messageIndex].querySelector('.message-reactions');
+            let existingBtn = Array.from(reactionsDiv.children).find(btn => 
+                btn.classList.contains('reaction-btn') && btn.textContent.split(' ')[0] === reaction
+            );
+            
+            if (existingBtn) {
+                const currentCount = parseInt(existingBtn.dataset.count) || 0;
+                
+                // Si click local, toggle (si actif, retirer ; si inactif, ajouter)
+                if (isLocal && existingBtn.classList.contains('active')) {
+                    if (currentCount <= 1) {
+                        existingBtn.textContent = reaction;
+                        existingBtn.dataset.count = 0;
+                        existingBtn.classList.remove('active');
+                    } else {
+                        existingBtn.textContent = `${reaction} ${currentCount - 1}`;
+                        existingBtn.dataset.count = currentCount - 1;
+                        existingBtn.classList.remove('active');
+                    }
+                } else {
+                    // Si réception externe ou click sur inactif, ajouter
+                    const newCount = currentCount + 1;
+                    existingBtn.textContent = newCount === 1 ? reaction : `${reaction} ${newCount}`;
+                    existingBtn.dataset.count = newCount;
+                    if (isLocal) {
+                        existingBtn.classList.add('active');
+                    }
+                }
+            }
+        }
+    }
+
+    showReactionPicker(reactionsDiv) {
+        const allReactions = ['👍', '❤️', '😂', '😢', '🎉', '😍', '🔥', '💯', '✨', '😎'];
+        const picked = prompt(`Pick a reaction: ${allReactions.join(' ')}`, '👍');
+        if (picked && allReactions.includes(picked)) {
+            this.broadcastReaction(reactionsDiv.dataset.messageIndex, picked);
+        }
+    }
+
+    toggleChat() {
+        const chatPanel = document.getElementById('chat-panel');
+        const main = document.querySelector('.main');
+        chatPanel.classList.toggle('hidden');
+        main.classList.toggle('chat-closed');
+    }
+
+    toggleEmojiPicker() {
+        let picker = document.getElementById('emoji-picker');
+        
+        if (picker) {
+            picker.remove();
+            return;
+        }
+
+        picker = document.createElement('div');
+        picker.id = 'emoji-picker';
+        picker.className = 'emoji-picker';
+        
+        const emojis = ['😀', '😂', '😍', '🥰', '😘', '😭', '🤔', '😡', '👍', '👎', '🔥', '💯', '✨', '🎉', '🎊', '🚀', '💯', '❤️', '💔', '💕', '💖', '💗', '💘', '🎁', '🎈', '🌟', '⭐', '✨', '🌈', '☀️', '🌙', '⚡'];
+        
+        emojis.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.textContent = emoji;
+            btn.onclick = () => this.insertEmoji(emoji);
+            picker.appendChild(btn);
+        });
+
+        document.body.appendChild(picker);
+    }
+
+    insertEmoji(emoji) {
+        const input = document.getElementById('chat_message');
+        input.value += emoji;
+        input.focus();
+        
+        // Remove emoji picker after selection
+        const picker = document.getElementById('emoji-picker');
+        if (picker) picker.remove();
+    }
+
+    handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const fileName = file.name;
+            const fileSize = (file.size / 1024).toFixed(2);
+            const message = `📎 ${fileName} (${fileSize}KB)`;
+            
+            this.peerService.broadcastMessage(message, this.myUsername);
+            this.createMessage(message, 'Me');
+            
+            // Reset file input
+            document.getElementById('file-input').value = '';
+        }
     }
 
     scrollToBottom() {

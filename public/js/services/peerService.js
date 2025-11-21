@@ -130,6 +130,14 @@ export class PeerService {
         });
     }
 
+    broadcastReaction(messageIndex, reaction) {
+        Object.values(this.dataConnections).forEach(conn => {
+            if(conn.open) {
+                conn.send({ type: 'reaction', messageIndex: messageIndex, reaction: reaction });
+            }
+        });
+    }
+
     onPeerList(callback) {
         this.onPeerListReceived = callback;
     }
