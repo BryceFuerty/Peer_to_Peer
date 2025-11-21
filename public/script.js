@@ -2,18 +2,23 @@ const videoGrid = document.getElementById('video-grid');
 const myVideo = document.createElement('video');
 myVideo.muted = true;
 
-// Initialize Peer with default config (PeerJS Cloud)
-const peer = new Peer();
-
-let myVideoStream;
-let myPeerId;
-const peers = {}; // Keep track of calls
-const dataConnections = {}; // Keep track of chat connections
-
 // Check if we need to connect to someone
 const urlParams = new URLSearchParams(window.location.search);
 const connectToId = urlParams.get('connectTo');
 const myUsername = urlParams.get('username') || 'Anonymous';
+const customId = urlParams.get('customId');
+
+// Initialize Peer
+// If customId is present, try to use it. Otherwise let PeerJS generate one.
+const peer = customId ? new Peer(customId) : new Peer();
+
+peer.on('error', err => {
+  console.error(err);
+  if (err.type === 'unavailable-id') {
+    alert(`The Room Name "${customId}" is already taken. Please choose another one.`);
+    window.location.href = '/';
+  }
+});
 
 navigator.mediaDevices.getUserMedia({
   video: true,
@@ -216,3 +221,8 @@ const setPlayVideo = () => {
   `
   document.querySelector('.main__video_button').innerHTML = html;
 }
+
+let myVideoStream;
+let myPeerId;
+const peers = {}; // Keep track of calls
+const dataConnections = {}; // Keep track of chat connections

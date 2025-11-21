@@ -60,19 +60,30 @@
     
     <input type="text" id="usernameInput" placeholder="Enter your Username" style="margin-bottom: 20px; border-color: #2196F3;">
 
-    <button class="btn-create" onclick="createRoom()">Create New Room</button>
+    <div style="text-align: left; margin-bottom: 5px; font-size: 14px; color: #aaa;">Host a Room:</div>
+    <input type="text" id="roomNameInput" placeholder="Room Name (Optional, e.g. 'my-meeting')" style="margin-bottom: 10px;">
+    <button class="btn-create" onclick="createRoom()">Create / Host Room</button>
     
     <div class="divider">OR</div>
     
-    <input type="text" id="peerIdInput" placeholder="Enter Friend's Peer ID">
+    <div style="text-align: left; margin-bottom: 5px; font-size: 14px; color: #aaa;">Join a Room:</div>
+    <input type="text" id="peerIdInput" placeholder="Enter Room Name / Friend's ID">
     <button class="btn-join" onclick="joinByPeer()">Find & Join Room</button>
   </div>
 
   <script>
     function createRoom() {
       const username = document.getElementById('usernameInput').value.trim();
+      const roomName = document.getElementById('roomNameInput').value.trim();
+      
       if (!username) return alert('Please enter a username');
-      window.location.href = `/room?username=${encodeURIComponent(username)}`;
+      
+      let url = `/room?username=${encodeURIComponent(username)}`;
+      if (roomName) {
+        url += `&customId=${encodeURIComponent(roomName)}`;
+      }
+      
+      window.location.href = url;
     }
 
     function joinByPeer() {
