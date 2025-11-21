@@ -1,23 +1,18 @@
-const socket = io('/');
 const videoGrid = document.getElementById('video-grid');
 const myVideo = document.createElement('video');
 myVideo.muted = true;
 
-// Initialize Peer
-const peer = new Peer(undefined, {
-  path: '/peerjs',
-  host: '/',
-  port: location.port || (location.protocol === 'https:' ? 443 : 80),
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' }
-    ]
-  }
-});
+// Initialize Peer with default config (PeerJS Cloud)
+const peer = new Peer();
 
 let myVideoStream;
-const peers = {};
-let myPeerId; // Global variable for the UI
+let myPeerId;
+const peers = {}; // Keep track of calls
+const dataConnections = {}; // Keep track of chat connections
+
+// Check if we need to connect to someone
+const urlParams = new URLSearchParams(window.location.search);
+const connectToId = urlParams.get('connectTo');
 
 navigator.mediaDevices.getUserMedia({
   video: true,
@@ -26,43 +21,75 @@ navigator.mediaDevices.getUserMedia({
   myVideoStream = stream;
   addVideoStream(myVideo, stream);
 
+  // Answer incoming calls
   peer.on('call', call => {
     call.answer(stream);
     const video = document.createElement('video');
+    
     call.on('stream', userVideoStream => {
       addVideoStream(video, userVideoStream);
     });
+    
+    call.on('close', () => {
+      video.remove();
+    });
   });
 
-  socket.on('user-connected', userId => {
-    // Allow some time for the peer to be ready
-    setTimeout(() => {
-      connectToNewUser(userId, stream);
-    }, 1000);
-  });
-});
-
-socket.on('user-disconnected', userId => {
-  if (peers[userId]) peers[userId].close();
+  // If we have an ID to connect to, call them
+  if (connectToId) {
+    // Wait for our ID to be ready
+    if (myPeerId) {
+      connectToPeer(connectToId, stream);
+    } else {
+      peer.on('open', () => {
+        connectToPeer(connectToId, stream);
+      });
+    }
+  }
 });
 
 peer.on('open', id => {
   myPeerId = id;
-  socket.emit('join-room', ROOM_ID, id);
+  console.log('My Peer ID is: ' + id);
 });
 
-const connectToNewUser = (userId, stream) => {
-  const call = peer.call(userId, stream);
+// Handle incoming data connections (Chat)
+peer.on('connection', conn => {
+  setupDataConnection(conn);
+});
+
+function connectToPeer(peerId, stream) {
+  // 1. Call for Video
+  const call = peer.call(peerId, stream);
   const video = document.createElement('video');
+  
   call.on('stream', userVideoStream => {
     addVideoStream(video, userVideoStream);
   });
   call.on('close', () => {
     video.remove();
   });
+  peers[peerId] = call;
 
-  peers[userId] = call;
-};
+  // 2. Connect for Chat
+  const conn = peer.connect(peerId);
+  setupDataConnection(conn);
+}
+
+function setupDataConnection(conn) {
+  dataConnections[conn.peer] = conn;
+
+  conn.on('open', () => {
+    // Connection is ready
+  });
+
+  conn.on('data', data => {
+    // Handle received data
+    if (data.type === 'chat') {
+      createMessage(data.message, 'User');
+    }
+  });
+}
 
 const addVideoStream = (video, stream) => {
   video.srcObject = stream;
@@ -74,22 +101,30 @@ const addVideoStream = (video, stream) => {
 
 // Chat Logic
 let text = document.querySelector("#chat_message");
-let send = document.getElementById("send");
 let messages = document.querySelector(".messages");
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && text.value.length !== 0) {
-    socket.emit('message', text.value);
+    const message = text.value;
+    
+    // Send to all connected peers
+    Object.values(dataConnections).forEach(conn => {
+      if(conn.open) {
+        conn.send({ type: 'chat', message: message });
+      }
+    });
+
+    createMessage(message, 'Me');
     text.value = '';
   }
 });
 
-socket.on('createMessage', (message, userId) => {
+function createMessage(message, sender) {
   const li = document.createElement('li');
-  li.innerHTML = `<b>User</b><br/>${message}`;
+  li.innerHTML = `<b>${sender}</b><br/>${message}`;
   messages.append(li);
   scrollToBottom();
-});
+}
 
 const scrollToBottom = () => {
   let d = document.querySelector('.main__chat_window');

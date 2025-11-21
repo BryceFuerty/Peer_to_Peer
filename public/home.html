@@ -68,26 +68,15 @@
 
   <script>
     function createRoom() {
-      window.location.href = '/create-room';
+      window.location.href = '/room';
     }
 
-    async function joinByPeer() {
+    function joinByPeer() {
       const peerId = document.getElementById('peerIdInput').value.trim();
       if (!peerId) return alert('Please enter a Peer ID');
-
-      try {
-        const response = await fetch(`/api/get-room/${peerId}`);
-        const data = await response.json();
-        
-        if (data.roomId) {
-          window.location.href = `/${data.roomId}`;
-        } else {
-          alert('User not found or not in a room.');
-        }
-      } catch (e) {
-        console.error(e);
-        alert('Error searching for room.');
-      }
+      
+      // Pass the peer ID to the room page via query param
+      window.location.href = `/room?connectTo=${peerId}`;
     }
   </script>
 </body>
