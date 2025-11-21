@@ -71,6 +71,7 @@ Ce projet permet de créer des salons de discussion vidéo et de rejoindre des s
 
    1-Choix du pseudo
       En arrivant sur la page, choisir un pseudo dans l'onglet "Enter your username"
+
    2-Création de la room
       Choisir le nom de la room dans Room Name ou laisser le champs vide. Cliquer sur le bouton
       "Create/Host room"
@@ -84,6 +85,7 @@ Ce projet permet de créer des salons de discussion vidéo et de rejoindre des s
          -Cliquer sur le bouton "Participant"
          -Choisir l'user que l'on veut kick
          -taper /kick *peerID"
+
    4-Rejoindre une room
       Pour toute cette partie nous avons utilisé un serveur Ngrok pour les tests
       voir: https://ngrok.com/
