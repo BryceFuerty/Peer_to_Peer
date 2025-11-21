@@ -70,9 +70,11 @@ export class PeerService {
     }
 
     setupDataConnection(conn) {
+        console.log(`[PeerService] Setting up data connection with ${conn.peer}`);
         this.dataConnections[conn.peer] = conn;
 
         conn.on('open', () => {
+            console.log(`[PeerService] Connection opened with ${conn.peer}`);
             const knownPeers = Object.keys(this.dataConnections).filter(id => id !== conn.peer);
             if (knownPeers.length > 0) {
                 conn.send({ type: 'peer-list', peers: knownPeers });
@@ -80,6 +82,7 @@ export class PeerService {
         });
 
         conn.on('data', data => {
+            console.log(`[PeerService] Data received on connection ${conn.peer}:`, data);
             if (data.type === 'kick') {
                 window.location.href = '/?kicked=true';
                 return;
@@ -93,6 +96,7 @@ export class PeerService {
         });
 
         conn.on('close', () => {
+            console.log(`[PeerService] Connection closed with ${conn.peer}`);
             delete this.dataConnections[conn.peer];
             if (this.peers[conn.peer]) {
                 this.peers[conn.peer].close();
@@ -101,6 +105,7 @@ export class PeerService {
         });
         
         conn.on('error', () => {
+            console.log(`[PeerService] Connection error with ${conn.peer}`);
             delete this.dataConnections[conn.peer];
         });
     }
@@ -117,8 +122,12 @@ export class PeerService {
     }
 
     broadcastMessage(message, sender, messageId) {
-        Object.values(this.dataConnections).forEach(conn => {
+        console.log(`[PeerService] Broadcasting message: ${message}, sender: ${sender}, messageId: ${messageId}`);
+        console.log(`[PeerService] Active connections: ${Object.keys(this.dataConnections).length}`);
+        Object.values(this.dataConnections).forEach((conn, index) => {
+            console.log(`[PeerService] Connection ${index}: open=${conn.open}`);
             if(conn.open) {
+                console.log(`[PeerService] Sending to ${conn.peer}`);
                 conn.send({ type: 'chat', message: message, sender: sender, messageId: messageId });
             }
         });

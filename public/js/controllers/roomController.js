@@ -53,9 +53,12 @@ export class RoomController {
     }
 
     handleData(data) {
+        console.log('Received data:', data);
         if (data.type === 'chat') {
+            console.log('Creating message from peer:', data.sender, data.messageId);
             this.createMessage(data.message, data.sender || 'User', data.messageId);
         } else if (data.type === 'reaction') {
+            console.log('Received reaction:', data.reaction, 'for message:', data.messageId);
             this.addReaction(data.messageId, data.reaction, false);
         }
     }
@@ -117,21 +120,8 @@ export class RoomController {
         const text = document.querySelector("#chat_message");
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && text.value.length !== 0) {
-                const message = text.value;
-                
-                if (this.isHost && message.startsWith('/kick ')) {
-                    const peerIdToKick = message.split(' ')[1];
-                    if (peerIdToKick) {
-                        this.peerService.kickPeer(peerIdToKick);
-                        this.createMessage(`Kicked user ${peerIdToKick}`, 'System');
-                        text.value = '';
-                        return;
-                    }
-                }
-
-                this.peerService.broadcastMessage(message, this.myUsername);
-                this.createMessage(message, 'Me');
-                text.value = '';
+                e.preventDefault();
+                this.sendMessage();
             }
         });
 
@@ -194,85 +184,101 @@ export class RoomController {
         textDiv.className = 'message-text';
         textDiv.textContent = message;
         
-        const reactionsDiv = document.createElement('div');
-        reactionsDiv.className = 'message-reactions';
-        reactionsDiv.dataset.messageId = messageId;
+        // const reactionsDiv = document.createElement('div');
+        // reactionsDiv.className = 'message-reactions';
+        // reactionsDiv.dataset.messageId = messageId;
         
-        const reactions = ['👍', '❤️', '😂', '😢', '🎉'];
-        reactions.forEach(reaction => {
-            const btn = document.createElement('button');
-            btn.className = 'reaction-btn';
-            btn.textContent = reaction;
-            btn.dataset.count = 0;
-            btn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageId, reaction);
-            reactionsDiv.appendChild(btn);
-        });
+        // const reactions = ['👍', '❤️', '😂', '😢', '🎉'];
+        // reactions.forEach(reaction => {
+        //     const btn = document.createElement('button');
+        //     btn.className = 'reaction-btn';
+        //     btn.textContent = reaction;
+        //     btn.dataset.count = 0;
+        //     btn.onclick = () => this.broadcastReaction(reactionsDiv.dataset.messageId, reaction);
+        //     reactionsDiv.appendChild(btn);
+        // });
         
-        const addBtn = document.createElement('button');
-        addBtn.className = 'add-reaction-btn';
-        addBtn.textContent = '+';
-        addBtn.onclick = () => this.showReactionPicker(reactionsDiv);
-        reactionsDiv.appendChild(addBtn);
+        // const addBtn = document.createElement('button');
+        // addBtn.className = 'add-reaction-btn';
+        // addBtn.textContent = '+';
+        // addBtn.onclick = () => this.showReactionPicker(reactionsDiv);
+        // reactionsDiv.appendChild(addBtn);
         
         li.appendChild(senderDiv);
         li.appendChild(textDiv);
-        li.appendChild(reactionsDiv);
+        // li.appendChild(reactionsDiv);
         
         messages.append(li);
         this.scrollToBottom();
     }
 
-    broadcastReaction(messageId, reaction) {
-        this.peerService.broadcastReaction(messageId, reaction);
-        this.addReaction(messageId, reaction, true);
-    }
+    // broadcastReaction(messageId, reaction) {
+    //     console.log(`Broadcasting reaction: ${reaction} for message ${messageId}`);
+    //     this.peerService.broadcastReaction(messageId, reaction);
+    //     this.addReaction(messageId, reaction, true);
+    // }
 
-    addReaction(messageId, reaction, isLocal = true) {
-        const messageElement = document.querySelector(`li[data-message-id="${messageId}"]`);
-        if (messageElement) {
-            const reactionsDiv = messageElement.querySelector('.message-reactions');
-            let existingBtn = Array.from(reactionsDiv.children).find(btn => 
-                btn.classList.contains('reaction-btn') && btn.textContent.split(' ')[0] === reaction
-            );
-            
-            if (existingBtn) {
-                const currentCount = parseInt(existingBtn.dataset.count) || 0;
-                
-                if (isLocal && existingBtn.classList.contains('active')) {
-                    if (currentCount <= 1) {
-                        existingBtn.textContent = reaction;
-                        existingBtn.dataset.count = 0;
-                        existingBtn.classList.remove('active');
-                    } else {
-                        existingBtn.textContent = `${reaction} ${currentCount - 1}`;
-                        existingBtn.dataset.count = currentCount - 1;
-                        existingBtn.classList.remove('active');
-                    }
-                } else {
-                    const newCount = currentCount + 1;
-                    existingBtn.textContent = newCount === 1 ? reaction : `${reaction} ${newCount}`;
-                    existingBtn.dataset.count = newCount;
-                    if (isLocal) {
-                        existingBtn.classList.add('active');
-                    }
-                }
-            } else {
-                // Créer un nouveau bouton de réaction
-                const newBtn = document.createElement('button');
-                newBtn.className = isLocal ? 'reaction-btn active' : 'reaction-btn';
-                newBtn.textContent = reaction;
-                newBtn.dataset.count = 1;
-                newBtn.onclick = () => this.broadcastReaction(messageId, reaction);
-                
-                const addBtn = reactionsDiv.querySelector('.add-reaction-btn');
-                if (addBtn) {
-                    reactionsDiv.insertBefore(newBtn, addBtn);
-                } else {
-                    reactionsDiv.appendChild(newBtn);
-                }
-            }
-        }
-    }
+    // addReaction(messageId, reaction, isLocal = true) {
+    //     console.log(`Adding reaction: ${reaction} to message ${messageId}, isLocal: ${isLocal}`);
+    //     const messageElement = document.querySelector(`li[data-message-id="${messageId}"]`);
+    //     if (!messageElement) {
+    //         console.log(`Message not found for ID: ${messageId}`);
+    //         return;
+    //     }
+    //     
+    //     const reactionsDiv = messageElement.querySelector('.message-reactions');
+    //     if (!reactionsDiv) {
+    //         console.log(`Reactions div not found for message ${messageId}`);
+    //         return;
+    //     }
+    //     
+    //     // Chercher le bouton existant - extraire juste l'emoji
+    //     let existingBtn = Array.from(reactionsDiv.querySelectorAll('.reaction-btn')).find(btn => {
+    //         const btnEmoji = btn.textContent.trim().split(' ')[0];
+    //         return btnEmoji === reaction;
+    //     });
+    //     
+    //     if (existingBtn) {
+    //         console.log(`Found existing button for ${reaction}`);
+    //         const currentCount = parseInt(existingBtn.dataset.count) || 0;
+    //         
+    //         if (isLocal && existingBtn.classList.contains('active')) {
+    //             // Toggle off pour local
+    //             if (currentCount <= 1) {
+    //                 existingBtn.textContent = reaction;
+    //                 existingBtn.dataset.count = 0;
+    //                 existingBtn.classList.remove('active');
+    //             } else {
+    //                 existingBtn.textContent = `${reaction} ${currentCount - 1}`;
+    //                 existingBtn.dataset.count = currentCount - 1;
+    //                 existingBtn.classList.remove('active');
+    //             }
+    //         } else {
+    //             // Incrémenter le count
+    //             const newCount = currentCount + 1;
+    //             existingBtn.textContent = newCount === 1 ? reaction : `${reaction} ${newCount}`;
+    //             existingBtn.dataset.count = newCount;
+    //             if (isLocal) {
+    //                 existingBtn.classList.add('active');
+    //             }
+    //         }
+    //     } else {
+    //         // Créer un nouveau bouton de réaction
+    //         console.log(`Creating new button for ${reaction}`);
+    //         const newBtn = document.createElement('button');
+    //         newBtn.className = isLocal ? 'reaction-btn active' : 'reaction-btn';
+    //         newBtn.textContent = reaction;
+    //         newBtn.dataset.count = 1;
+    //         newBtn.onclick = () => this.broadcastReaction(messageId, reaction);
+    //         
+    //         const addBtn = reactionsDiv.querySelector('.add-reaction-btn');
+    //         if (addBtn) {
+    //             reactionsDiv.insertBefore(newBtn, addBtn);
+    //         } else {
+    //             reactionsDiv.appendChild(newBtn);
+    //         }
+    //     }
+    // }
 
     showReactionPicker(reactionsDiv) {
         let existingPicker = document.getElementById('reaction-picker');
